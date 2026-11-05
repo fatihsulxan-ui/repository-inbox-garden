@@ -1,16 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ArrowLeft, Pencil, Trash2, MapPin, User, Phone, Plus,
   CalendarDays, Clock, CalendarOff, Sunrise, Sun, CloudSun, Sunset, Moon,
-  CheckCircle2, CalendarX, AlertTriangle, PenLine, ThumbsUp,
+  CheckCircle2, CalendarX, AlertTriangle, PenLine, ThumbsUp, Camera,
 } from "@/components/app/icons";
 import { Avatar } from "@/components/app/AppShell";
 import { Sheet } from "@/components/app/Sheet";
 import { StudentForm } from "@/components/app/StudentForm";
 import { TutanakForm } from "@/components/app/TutanakForm";
 import { TutanakFiles } from "@/components/app/TutanakFiles";
-import { deleteFile } from "@/lib/attachments";
+import { deleteFile, newFileId, prepareFile, putFile } from "@/lib/attachments";
 import { useStore, type Student, type Tutanak } from "@/lib/store";
 import { PdfButton } from "@/components/app/PdfButton";
 import { computeStats, daysSinceFirst, monthly, VAKITLER } from "@/lib/stats";
@@ -47,7 +47,9 @@ function PhoneLink({ label, value }: { label: string; value: string }) {
     </a>
   );
 }
-function TutCard({ t, student, onSign, onRemove }: { t: Tutanak; student: Student; onSign?: () => void; onRemove?: () => void }) {
+function TutCard({ t, student, onSign, onRemove, onUploadSigned }: { t: Tutanak; student: Student; onSign?: () => void; onRemove?: () => void; onUploadSigned?: (f: File) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const btn = "flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium";
   return (
     <div className="border-b border-border py-4">
       <div className="flex items-start gap-3">
@@ -62,24 +64,58 @@ function TutCard({ t, student, onSign, onRemove }: { t: Tutanak; student: Studen
           <span className={`rounded-full px-3 py-1 text-xs ${t.positive ? "bg-good text-primary-foreground" : "bg-destructive text-destructive-foreground"}`}>{t.tag}</span>
           {onSign ? (
             <button onClick={onSign} className={`flex items-center gap-1 text-xs ${t.signed ? "text-good" : "text-muted-foreground"}`}>
-              <PenLine className="h-3.5 w-3.5" /> {t.signed ? "İmzalı" : "İmzala"}
+              <PenLine className="h-3.5 w-3.5" /> {t.signed ? "İmzalı" : "İmza bekliyor"}
             </button>
           ) : (
-            <span className={`text-xs ${t.signed ? "text-good" : "text-muted-foreground"}`}>{t.signed ? "Veli imzalı" : "İmza bekliyor"}</span>
+            <span className={`text-xs ${t.signed ? "text-good" : "text-muted-foreground"}`}>{t.signed ? "İmzalı" : "İmza bekliyor"}</span>
           )}
         </div>
       </div>
       {t.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{t.body}</p>}
       <TutanakFiles photoId={t.photoId} docId={t.docId} />
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <PdfButton
-          make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t))}
-          depsKey={JSON.stringify([t, student])}
-          label="Tutanak PDF"
-          className="flex items-center gap-1.5 rounded-xl bg-brand-soft px-3 py-2 text-xs font-medium text-primary"
-        />
-        {onRemove && <button onClick={onRemove} className="flex items-center gap-1 text-xs text-destructive"><Trash2 className="h-3.5 w-3.5" /> Sil</button>}
-      </div>
+      {onUploadSigned ? (
+        <ol className="mt-3 space-y-2">
+          <li className="flex flex-wrap items-center gap-2">
+            <span className="w-5 text-sm font-bold text-primary">1</span>
+            <PdfButton
+              make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t, null, "print"))}
+              depsKey={JSON.stringify([t, student, "print"])}
+              label="İmza için PDF yazdır"
+              className={`${btn} bg-card border border-border`}
+            />
+            <span className="text-xs text-muted-foreground">Hoca Efendi ve talebe imzalar</span>
+          </li>
+          <li className="flex flex-wrap items-center gap-2">
+            <span className="w-5 text-sm font-bold text-primary">2</span>
+            <button type="button" onClick={() => fileRef.current?.click()} className={`${btn} ${t.docId ? "bg-brand-soft text-primary" : "bg-card border border-border"}`}>
+              <Camera className="h-4 w-4" /> {t.docId ? "İmzalı fotoğraf yüklendi — değiştir" : "İmzalı kâğıdın fotoğrafını yükle"}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadSigned(f); e.target.value = ""; }} />
+          </li>
+          <li className="flex flex-wrap items-center gap-2">
+            <span className="w-5 text-sm font-bold text-primary">3</span>
+            {t.docId ? (
+              <PdfButton
+                make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t))}
+                depsKey={JSON.stringify([t, student])}
+                label="Aileye gönderilecek PDF"
+                readyLabel="PDF hazır — Aileye gönder"
+                className={`${btn} bg-primary text-primary-foreground`}
+              />
+            ) : <span className="text-xs text-muted-foreground">İmzalı fotoğraf yüklenince aileye gönderilecek PDF hazırlanır.</span>}
+          </li>
+        </ol>
+      ) : (
+        <div className="mt-3">
+          <PdfButton
+            make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t))}
+            depsKey={JSON.stringify([t, student])}
+            label="Tutanak PDF"
+            className={`${btn} bg-brand-soft text-primary`}
+          />
+        </div>
+      )}
+      {onRemove && <div className="mt-3 text-right"><button onClick={onRemove} className="inline-flex items-center gap-1 text-xs text-destructive"><Trash2 className="h-3.5 w-3.5" /> Sil</button></div>}
     </div>
   );
 }
@@ -112,6 +148,16 @@ function TalebeDetay() {
     if (confirm(`${student.name} ve tüm kayıtları silinsin mi?`)) { tut.forEach((t) => { if (t.photoId) deleteFile(t.photoId); if (t.docId) deleteFile(t.docId); }); store.removeStudent(id); navigate({ to: "/" }); }
   };
 
+  const uploadSigned = async (t: Tutanak, file: File) => {
+    try {
+      const id = newFileId();
+      await putFile(id, await prepareFile(file));
+      if (t.docId) void deleteFile(t.docId);
+      store.updateTutanak(t.id, { docId: id, signed: true });
+    } catch {
+      alert("Fotoğraf kaydedilemedi. Telefonda yer kalmamış olabilir.");
+    }
+  };
   const removeTut = (t: Tutanak) => {
     if (!confirm("Tutanak silinsin mi?")) return;
     store.removeTutanak(t.id);
@@ -216,9 +262,9 @@ function TalebeDetay() {
             <button onClick={() => setSheet("tutanak")} className="flex shrink-0 items-center gap-2 rounded-xl bg-destructive px-4 py-2.5 text-sm text-destructive-foreground"><Plus className="h-4 w-4" /> Tutanak Ekle</button>
           </div>
           <h4 className="mt-5 font-serif text-lg font-bold text-primary">Olumlu ({pos.length})</h4>
-          <div className="mt-3 space-y-4">{pos.length ? pos.map((t) => <TutCard key={t.id} t={t} student={student} onSign={() => store.updateTutanak(t.id, { signed: !t.signed })} onRemove={() => removeTut(t)} />) : <p className="text-sm text-muted-foreground">Kayıt yok.</p>}</div>
+          <div className="mt-3 space-y-4">{pos.length ? pos.map((t) => <TutCard key={t.id} t={t} student={student} onSign={() => store.updateTutanak(t.id, { signed: !t.signed })} onRemove={() => removeTut(t)} onUploadSigned={(f) => uploadSigned(t, f)} />) : <p className="text-sm text-muted-foreground">Kayıt yok.</p>}</div>
           <h4 className="mt-5 font-serif text-lg font-bold text-warn">Olumsuz ({neg.length})</h4>
-          <div className="mt-3 space-y-4">{neg.length ? neg.map((t) => <TutCard key={t.id} t={t} student={student} onSign={() => store.updateTutanak(t.id, { signed: !t.signed })} onRemove={() => removeTut(t)} />) : <p className="text-sm text-muted-foreground">Kayıt yok.</p>}</div>
+          <div className="mt-3 space-y-4">{neg.length ? neg.map((t) => <TutCard key={t.id} t={t} student={student} onSign={() => store.updateTutanak(t.id, { signed: !t.signed })} onRemove={() => removeTut(t)} onUploadSigned={(f) => uploadSigned(t, f)} />) : <p className="text-sm text-muted-foreground">Kayıt yok.</p>}</div>
         </>
       )}
 

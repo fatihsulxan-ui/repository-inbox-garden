@@ -57,7 +57,7 @@ export function LiquidTabBar({ tabs }: { tabs: readonly Tab[] }) {
   /** The tab the finger is on: the cell it touches, else the nearest centre. */
   const tabAt = (x: number, y: number): number | null => {
     const hit = document.elementFromPoint(x, y)?.closest("a[data-tab]") as HTMLAnchorElement | null;
-    const hitIndex = Number(hit?.dataset.tab);
+    const hitIndex = Number(hit?.dataset["tab"]);
     if (hit && Number.isInteger(hitIndex)) return hitIndex;
     let best: number | null = null;
     let bestDist = Infinity;
@@ -76,11 +76,12 @@ export function LiquidTabBar({ tabs }: { tabs: readonly Tab[] }) {
   const glideAt = (x: number): number | null => {
     const cs = centers().filter((c): c is number => c != null);
     if (cs.length < 2) return null;
-    if (x <= cs[0]) return 0;
+    if (x <= cs[0]!) return 0;
     const last = cs.length - 1;
-    if (x >= cs[last]) return last;
+    if (x >= cs[last]!) return last;
     for (let i = 0; i < last; i++) {
-      if (x <= cs[i + 1]) return i + (x - cs[i]) / (cs[i + 1] - cs[i]);
+      const a = cs[i]!, b = cs[i + 1]!;
+      if (x <= b) return i + (x - a) / (b - a);
     }
     return last;
   };

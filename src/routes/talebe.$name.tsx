@@ -62,59 +62,43 @@ function TutCard({ t, student, onSign, onRemove, onUploadSigned }: { t: Tutanak;
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className={`rounded-full px-3 py-1 text-xs ${t.positive ? "bg-good text-primary-foreground" : "bg-destructive text-destructive-foreground"}`}>{t.tag}</span>
-          {onSign ? (
-            <button onClick={onSign} className={`flex items-center gap-1 text-xs ${t.signed ? "text-good" : "text-muted-foreground"}`}>
-              <PenLine className="h-3.5 w-3.5" /> {t.signed ? "İmzalı" : "İmza bekliyor"}
-            </button>
-          ) : (
-            <span className={`text-xs ${t.signed ? "text-good" : "text-muted-foreground"}`}>{t.signed ? "İmzalı" : "İmza bekliyor"}</span>
-          )}
+          <span className={`flex items-center gap-1 text-xs ${t.docId ? "text-good" : "text-muted-foreground"}`}><PenLine className="h-3.5 w-3.5" /> {t.docId ? "İmzalı" : "İmza bekliyor"}</span>
         </div>
       </div>
-      {t.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{t.body}</p>}
-      <TutanakFiles photoId={t.photoId} docId={t.docId} />
-      {onUploadSigned ? (
-        <ol className="mt-3 space-y-2">
-          <li className="flex flex-wrap items-center gap-2">
-            <span className="w-5 text-sm font-bold text-primary">1</span>
-            <PdfButton
-              make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t, null, "print"))}
-              depsKey={JSON.stringify([t, student, "print"])}
-              label="İmza için PDF yazdır"
-              className={`${btn} bg-card border border-border`}
-            />
-            <span className="text-xs text-muted-foreground">Hoca Efendi ve talebe imzalar</span>
-          </li>
-          <li className="flex flex-wrap items-center gap-2">
-            <span className="w-5 text-sm font-bold text-primary">2</span>
-            <button type="button" onClick={() => fileRef.current?.click()} className={`${btn} ${t.docId ? "bg-brand-soft text-primary" : "bg-card border border-border"}`}>
-              <Camera className="h-4 w-4" /> {t.docId ? "İmzalı fotoğraf yüklendi — değiştir" : "İmzalı kâğıdın fotoğrafını yükle"}
+      {t.docId ? (
+        <TutanakFiles docId={t.docId} />
+      ) : (
+        <>
+          {t.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed">{t.body}</p>}
+          <TutanakFiles photoId={t.photoId} />
+        </>
+      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {t.docId ? (
+          <PdfButton
+            make={() => import("@/lib/student-pdf").then((m) => m.makeSignedTutanakPdf(student, t))}
+            depsKey={JSON.stringify([t, student])}
+            label="Aileye Gönder (PDF)"
+            readyLabel="PDF hazır — Gönder"
+            className={`${btn} bg-primary text-primary-foreground`}
+          />
+        ) : (
+          <PdfButton
+            make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t, null, "print"))}
+            depsKey={JSON.stringify([t, student, "print"])}
+            label="Yazdır (imza için)"
+            className={`${btn} bg-primary text-primary-foreground`}
+          />
+        )}
+        {onUploadSigned && (
+          <>
+            <button type="button" onClick={() => fileRef.current?.click()} className={`${btn} border border-border bg-card`}>
+              <Camera className="h-4 w-4" /> {t.docId ? "Fotoğrafı değiştir" : "İmzalı fotoğrafı yükle"}
             </button>
             <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUploadSigned(f); e.target.value = ""; }} />
-          </li>
-          <li className="flex flex-wrap items-center gap-2">
-            <span className="w-5 text-sm font-bold text-primary">3</span>
-            {t.docId ? (
-              <PdfButton
-                make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t))}
-                depsKey={JSON.stringify([t, student])}
-                label="Aileye gönderilecek PDF"
-                readyLabel="PDF hazır — Aileye gönder"
-                className={`${btn} bg-primary text-primary-foreground`}
-              />
-            ) : <span className="text-xs text-muted-foreground">İmzalı fotoğraf yüklenince aileye gönderilecek PDF hazırlanır.</span>}
-          </li>
-        </ol>
-      ) : (
-        <div className="mt-3">
-          <PdfButton
-            make={() => import("@/lib/student-pdf").then((m) => m.makeTutanakPdf(student, t))}
-            depsKey={JSON.stringify([t, student])}
-            label="Tutanak PDF"
-            className={`${btn} bg-brand-soft text-primary`}
-          />
-        </div>
-      )}
+          </>
+        )}
+      </div>
       {onRemove && <div className="mt-3 text-right"><button onClick={onRemove} className="inline-flex items-center gap-1 text-xs text-destructive"><Trash2 className="h-3.5 w-3.5" /> Sil</button></div>}
     </div>
   );

@@ -268,7 +268,7 @@ function tutanakCard(f: Flow, t: Tutanak, a: Att, reserve = 0) {
   const drawMeta = (y: number) => {
     if (t.signed) {
       font(d, 9, true, C.green);
-      d.text("✓ Velisi tarafından imzalandı", TX, y + 4);
+      d.text("✓ Hoca Efendi ve talebe tarafından imzalandı", TX, y + 4);
     }
     if (a.docPdf) {
       font(d, 8.5, false, C.gray);
@@ -334,7 +334,7 @@ function signatures(f: Flow) {
   const d = f.doc;
   f.ensure(32);
   const w = (CW - 10) / 2;
-  ["Öğretici", "Veli"].forEach((l, i) => {
+  ["Hoca Efendi", "Talebe"].forEach((l, i) => {
     const x = M + i * (w + 10);
     font(d, 9, true, C.gray);
     d.text(`${l} Adı Soyadı / İmza`, x, f.y + 6);
@@ -421,18 +421,38 @@ function drawPortrait(d: Doc, img: Img) {
   });
 }
 
-export async function makeTutanakPdf(s: Student, t: Tutanak, studentPhoto?: Blob | null) {
-  const [d, att, pic] = await Promise.all([newDoc(), loadAtt(t), portrait(t, studentPhoto)]);
+/** Signed paper photo on its own page, as large as the page allows, uncropped. */
+function fullPageImg(d: Doc, img: Img, title: string) {
+  d.addPage();
+  font(d, 12, true);
+  d.text(title, M, 16);
+  const maxW = CW, maxH = 284 - 26;
+  let w = maxW, h = (w * img.h) / img.w;
+  if (h > maxH) { h = maxH; w = (h * img.w) / img.h; }
+  d.addImage(img.data, "JPEG", M + (maxW - w) / 2, 22, w, h);
+}
+
+/**
+ * `print`: blank tutanak with Hoca Efendi / Talebe signature lines, to sign on paper.
+ * `final` (default): the tutanak plus the uploaded signed paper on a full page, for the family.
+ */
+export async function makeTutanakPdf(s: Student, t: Tutanak, studentPhoto?: Blob | null, mode: "print" | "final" = "final") {
+  const [d, att0, pic] = await Promise.all([newDoc(), loadAtt(t), portrait(t, studentPhoto)]);
+  const signedDoc = mode === "final" ? att0.doc : null;
+  const att: Att = { ...att0, doc: null, docPdf: mode === "final" ? att0.docPdf : null };
+  const card: Tutanak = mode === "print" ? { ...t, signed: false } : t;
   header(d, "Tutanak", s, !!pic);
   if (pic) await drawPortrait(d, pic);
   const f = new Flow(d);
   f.y = 56;
   infoPanel(f, s);
   section(f, "Tutanak", t.positive ? C.green : C.red);
-  tutanakCard(f, t, att, 44); // card gap + spacing + signature block
+  tutanakCard(f, card, att, 44); // card gap + spacing + signature block
   f.y += 6;
   signatures(f);
+  if (signedDoc) fullPageImg(d, signedDoc, "İmzalı Tutanak");
   footers(d, s.name);
   const blob = await finish(d, att.docPdf ? [att.docPdf] : []);
-  return { blob, name: `tutanak-${fileSlug(s.name)}-${t.date}.pdf` };
+  const pre = mode === "print" ? "imza-icin-tutanak" : "tutanak";
+  return { blob, name: `${pre}-${fileSlug(s.name)}-${t.date}.pdf` };
 }

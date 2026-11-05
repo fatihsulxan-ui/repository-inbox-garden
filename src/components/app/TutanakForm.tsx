@@ -123,16 +123,12 @@ export function TutanakForm({ onSubmit, onCancel }: {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div>
         <FilePick icon={Camera} title="Fotoğraf Kanıtı" accept="image/*" file={photo} onPick={pick(setPhoto)} />
-        <FilePick icon={FileText} title="İmzalı Belge" accept="image/*,application/pdf" file={doc} onPick={pick(setDoc)} />
       </div>
+      <p className="rounded-xl bg-brand-soft p-3 text-xs text-primary">Kaydettikten sonra: 1) İmza için PDF yazdırın, 2) Hoca Efendi ve talebe imzalasın, 3) İmzalı kâğıdın fotoğrafını tutanağa yükleyin, 4) Aileye PDF gönderin.</p>
       <FilePick icon={Camera} title="Talebe Resmi (PDF'te sağ üstte)" accept="image/*" file={portrait} onPick={pick(setPortrait)} />
 
-      <label className="flex items-center gap-2.5 text-sm">
-        <input type="checkbox" className="h-5 w-5" checked={f.signed} onChange={(e) => setF({ ...f, signed: e.target.checked })} />
-        Velisi tarafından imzalandı
-      </label>
 
       <div className="space-y-2">
         <button className={primaryBtn} disabled={saving}>{saving ? "Kaydediliyor…" : "Kaydet"}</button>

@@ -436,6 +436,22 @@ function fullPageImg(d: Doc, img: Img, title: string) {
  * `print`: blank tutanak with Hoca Efendi / Talebe signature lines, to sign on paper.
  * `final` (default): the tutanak plus the uploaded signed paper on a full page, for the family.
  */
+/** Family copy: only the signed paper, one tutanak, nothing duplicated. */
+export async function makeSignedTutanakPdf(s: Student, t: Tutanak) {
+  const name = `tutanak-${fileSlug(s.name)}-${t.date}.pdf`;
+  const f = t.docId ? await getFile(t.docId).catch(() => undefined) : undefined;
+  if (!f) return makeTutanakPdf(s, t, null, "print");
+  if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) return { blob: new Blob([f.blob], { type: "application/pdf" }), name };
+  const [{ jsPDF }, img] = await Promise.all([import("jspdf"), toImg(f.blob)]);
+  if (!img) throw new Error("Fotoğraf okunamadı");
+  const d = new jsPDF({ unit: "mm", format: "a4" });
+  const m = 6, maxW = 210 - 2 * m, maxH = 297 - 2 * m;
+  let w = maxW, h = (w * img.h) / img.w;
+  if (h > maxH) { h = maxH; w = (h * img.w) / img.h; }
+  d.addImage(img.data, "JPEG", (210 - w) / 2, (297 - h) / 2, w, h);
+  return { blob: new Blob([d.output("arraybuffer")], { type: "application/pdf" }), name };
+}
+
 export async function makeTutanakPdf(s: Student, t: Tutanak, studentPhoto?: Blob | null, mode: "print" | "final" = "final") {
   const [d, att0, pic] = await Promise.all([newDoc(), loadAtt(t), portrait(t, studentPhoto)]);
   const signedDoc = mode === "final" ? att0.doc : null;

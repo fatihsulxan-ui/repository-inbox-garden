@@ -126,7 +126,7 @@ export function TutanakForm({ onSubmit, onCancel }: {
       <div>
         <FilePick icon={Camera} title="Fotoğraf Kanıtı" accept="image/*" file={photo} onPick={pick(setPhoto)} />
       </div>
-      <p className="rounded-xl bg-brand-soft p-3 text-xs text-primary">Kaydettikten sonra: 1) İmza için PDF yazdırın, 2) Hoca Efendi ve talebe imzalasın, 3) İmzalı kâğıdın fotoğrafını tutanağa yükleyin, 4) Aileye PDF gönderin.</p>
+      <p className="rounded-xl bg-brand-soft p-3 text-xs text-primary">Kaydedin → Yazdırın → Hoca Efendi ve talebe imzalasın → İmzalı fotoğrafı yükleyin → Aileye gönderin.</p>
       <FilePick icon={Camera} title="Talebe Resmi (PDF'te sağ üstte)" accept="image/*" file={portrait} onPick={pick(setPortrait)} />
 
 

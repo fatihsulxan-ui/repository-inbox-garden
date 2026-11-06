@@ -52,6 +52,18 @@ export function buildFullTutanakPrompt(i: FullTutanakInput): string {
 
 export type AiTutanak = { title: string; tag: string; body: string };
 
+export const POLISH_TUTANAK_INSTRUCTIONS = `Sen bir Kur'an kursunda hocaya yardımcı olan bir asistansın.
+Hocanın ham notlarını resmi, düzgün Türkçe bir tutanak metnine dönüştür.
+Sadece notlarda geçen bilgileri kullan; yeni olay, isim, saat veya ayrıntı uydurma.
+Yazım ve noktalama hatalarını düzelt, saygılı ve tarafsız bir dil kullan.
+Kısa tut (1-3 paragraf). Metne başlık, tarih veya imza satırı ekleme.
+Kategori belirtilmişse aynen koru; belirtilmemişse notlara uygun kısa bir kategori belirle.
+Yalnızca JSON döndür: {"kategori":"kategori","metin":"tutanak metni"}`;
+
+export function resolveTutanakCategory(manual: string, generated: string): string {
+  return manual.trim() || generated.trim() || "Tutanak";
+}
+
 /** Parses the model's JSON reply; falls back to treating the whole reply as the body. */
 export function parseAiTutanak(raw: string, fallback: { title: string; tag: string }): AiTutanak {
   const text = raw.trim();

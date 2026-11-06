@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Both tutanak AI functions resolve categories through the pure shared helper, preserving manually typed categories over model suggestions so both creation forms follow the same rule.
 - The opening logo is React-owned inside the shared root, never removed by inline DOM scripts; use a short legibility interval, font readiness, a bounded fallback and React-owned dismissal so navigation cannot restart it or break hydration.
 - Attendance cells are read and changed through pure helpers in `src/lib/stats.ts`; all views and exports reuse them so per-cell notes and day totals cannot diverge.
 - Attendance report export (PDF via jspdf, Excel via xlsx-js-style because plain SheetJS cannot write borders/rotated text for the namaz takip çizelgesi) lives in `src/lib/report-export.ts` and loads those libraries with dynamic `import()` so they never slow app startup; period/summary logic stays pure in `src/lib/report.ts` with tests.

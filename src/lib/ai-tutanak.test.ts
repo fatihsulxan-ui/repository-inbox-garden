@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildFullTutanakPrompt, parseAiTutanak, trDate } from "./ai-tutanak";
+import { buildFullTutanakPrompt, parseAiTutanak, resolveTutanakCategory, trDate } from "./ai-tutanak";
 
 describe("AI tutanak", () => {
+  it("preserves a freely typed category instead of the AI choice", () => {
+    expect(resolveTutanakCategory("  Kitaplara Özen  ", "Başarı")).toBe("Kitaplara Özen");
+  });
+
+  it("uses the AI category when the manual category is blank", () => {
+    expect(resolveTutanakCategory(" ", "Arkadaşına Yardım")).toBe("Arkadaşına Yardım");
+  });
   it("formats the date in Turkish", () => {
     expect(trDate("2026-10-30")).toBe("30 Ekim 2026");
     expect(trDate("2026-02-05")).toBe("5 Şubat 2026");

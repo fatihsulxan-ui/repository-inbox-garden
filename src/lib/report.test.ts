@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBlankChart, buildChart, chartByMonth, buildReport, fileSlug, filterRows, periodRange } from "./report";
+import { buildBlankChart, buildChart, chartByMonth, buildReport, fileSlug, filterRows, monthWeeks, periodRange } from "./report";
 import type { AttendanceRow, Student } from "./store";
 
 const row = (id: string, date: string, vakitler: string[], ders = false, durum: AttendanceRow["durum"] = "normal"): AttendanceRow => ({ id, studentId: "s1", date, vakitler, ders, durum });
@@ -11,6 +11,23 @@ const rows = [
 ];
 
 describe("blank paper attendance", () => {
+  it("selects a past month in full", () => {
+    const chart = buildBlankChart([], periodRange("aylik", "2025-02-01"));
+    expect(chart.days[0]).toBe("2025-02-01");
+    expect(chart.days.at(-1)).toBe("2025-02-28");
+  });
+  it("selects a future month in full", () => {
+    const chart = buildBlankChart([], periodRange("aylik", "2027-12-01"));
+    expect(chart.days[0]).toBe("2027-12-01");
+    expect(chart.days.at(-1)).toBe("2027-12-31");
+  });
+  it("lists every calendar week of the selected month", () => {
+    const weeks = monthWeeks("2026-11");
+    expect(weeks).toHaveLength(6);
+    expect(weeks[0]).toEqual({ start: "2026-10-26", end: "2026-11-01" });
+    expect(weeks[1]).toEqual({ start: "2026-11-02", end: "2026-11-08" });
+    expect(weeks[5]).toEqual({ start: "2026-11-30", end: "2026-12-06" });
+  });
   it("includes all registered students without any attendance records", () => {
     const chart = buildBlankChart([{ id: "b", name: "Bekir" }, { id: "a", name: "Ali" }], { start: "2026-10-31", end: "2026-11-01" });
     expect(chart.rows.map((s) => s.studentId)).toEqual(["a", "b"]);

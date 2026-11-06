@@ -1,13 +1,12 @@
 import { localIso } from "@/lib/utils";
 import { useRef, useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Camera, FileText, Loader2, Sparkles } from "./icons";
+import { Camera, Loader2, Sparkles } from "./icons";
 import { inputCls, primaryBtn } from "./Sheet";
 import { polishTutanak } from "@/lib/tutanak-ai.functions";
 import { newFileId, prepareFile, putFile, type StoredFile } from "@/lib/attachments";
 import type { Tutanak } from "@/lib/store";
 
-export const TUTANAK_TAGS = ["Namaza Katılmama", "Derse Geç Kalma", "Disiplinsizlik", "Arkadaşlarıyla Tartışma", "Güzel Davranış", "Başarı", "Diğer"];
 const today = () => localIso();
 const label = "mb-1.5 block text-sm font-medium";
 
@@ -32,9 +31,7 @@ export function TutanakForm({ onSubmit, onCancel }: {
   onCancel: () => void;
 }) {
   const polish = useServerFn(polishTutanak);
-  const [f, setF] = useState({ positive: false, date: today(), tag: TUTANAK_TAGS[1]!, title: "", body: "", signed: false });
-  const [photo, setPhoto] = useState<StoredFile | null>(null);
-  const [doc, setDoc] = useState<StoredFile | null>(null);
+  const [f, setF] = useState({ positive: false, date: today(), tag: "", title: "", body: "", signed: false });
   const [portrait, setPortrait] = useState<StoredFile | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiMsg, setAiMsg] = useState("");
@@ -50,7 +47,7 @@ export function TutanakForm({ onSubmit, onCancel }: {
     setAiBusy(true); setAiMsg("");
     try {
       const res = await polish({ data: { text: f.body, category: f.tag, positive: f.positive } });
-      if (res.ok) { setPrevBody(f.body); setF((p) => ({ ...p, body: res.text })); setAiMsg("Metin düzenlendi."); }
+      if (res.ok) { setPrevBody(f.body); setF((p) => ({ ...p, body: res.text, tag: p.tag.trim() || res.category })); setAiMsg("Metin düzenlendi."); }
       else setAiMsg(res.error);
     } catch (e) {
       setAiMsg(e instanceof Error ? e.message : "AI ile düzenleme yapılamadı.");
@@ -63,13 +60,9 @@ export function TutanakForm({ onSubmit, onCancel }: {
     e.preventDefault();
     setSaving(true);
     try {
-      let photoId: string | undefined;
-      let docId: string | undefined;
-      if (photo) { photoId = newFileId(); await putFile(photoId, photo); }
-      if (doc) { docId = newFileId(); await putFile(docId, doc); }
       let studentPhotoId: string | undefined;
       if (portrait) { studentPhotoId = newFileId(); await putFile(studentPhotoId, portrait); }
-      onSubmit({ ...f, title: f.title.trim() || f.tag, photoId, docId, studentPhotoId });
+      onSubmit({ ...f, tag: f.tag.trim() || "Tutanak", title: f.title.trim() || f.tag.trim() || "Tutanak", studentPhotoId });
     } catch {
       setAiMsg("Dosya kaydedilemedi. Telefonda yer kalmamış olabilir.");
       setSaving(false);
@@ -94,9 +87,7 @@ export function TutanakForm({ onSubmit, onCancel }: {
 
       <div>
         <span className={label}>Kategori</span>
-        <select className={inputCls} value={f.tag} onChange={(e) => setF({ ...f, tag: e.target.value })}>
-          {TUTANAK_TAGS.map((t) => <option key={t}>{t}</option>)}
-        </select>
+        <input aria-label="Kategori" className={inputCls} placeholder="Kategori yazın veya AI seçsin" value={f.tag} onChange={(e) => setF({ ...f, tag: e.target.value })} />
       </div>
 
       <div>
@@ -123,9 +114,6 @@ export function TutanakForm({ onSubmit, onCancel }: {
         )}
       </div>
 
-      <div>
-        <FilePick icon={Camera} title="Fotoğraf Kanıtı" accept="image/*" file={photo} onPick={pick(setPhoto)} />
-      </div>
       <p className="rounded-xl bg-brand-soft p-3 text-xs text-primary">Kaydedin → Yazdırın → Hoca Efendi ve talebe imzalasın → İmzalı fotoğrafı yükleyin → Aileye gönderin.</p>
       <FilePick icon={Camera} title="Talebe Resmi (PDF'te sağ üstte)" accept="image/*" file={portrait} onPick={pick(setPortrait)} />
 

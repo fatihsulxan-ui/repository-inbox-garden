@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Check, Loader2, Save, Sparkles } from "@/components/app/icons";
 import { inputCls, primaryBtn } from "@/components/app/Sheet";
 import { PdfButton } from "@/components/app/PdfButton";
-import { TUTANAK_TAGS } from "@/components/app/TutanakForm";
 import { writeFullTutanak } from "@/lib/tutanak-ai.functions";
 import { trDate, type AiTutanak } from "@/lib/ai-tutanak";
 import { useStore, type Student, type Tutanak } from "@/lib/store";
@@ -128,10 +127,7 @@ function AiTutanakPage() {
 
         <div>
           <span className={label}>Kategori</span>
-          <select className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">AI seçsin</option>
-            {TUTANAK_TAGS.map((t) => <option key={t}>{t}</option>)}
-          </select>
+          <input aria-label="Kategori" className={inputCls} placeholder="Kategori yazın veya AI seçsin" value={category} onChange={(e) => setCategory(e.target.value)} />
         </div>
 
         <div>

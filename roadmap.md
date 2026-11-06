@@ -1,4 +1,6 @@
 # Tasks
+- [x] Add explicit month/week selection for blank attendance downloads, including past and future months, and verify exports.
+- [x] Remove evidence picker and preset categories; support manual/AI categories and verify both tutanak forms.
 - [x] Show the opening logo only at app startup, remove forced waiting, and verify page transitions do not restart it.
 - [x] Include the full selected week/month in attendance exports; leave unrecorded days blank and verify PDF/Excel.
 - [x] Provide 55 clearly labeled trial students without replacing existing students and verify full-period exports with them.

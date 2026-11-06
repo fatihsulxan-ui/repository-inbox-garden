@@ -144,6 +144,24 @@ export function rangeLabel(r: Range) {
   return r.start === r.end ? formatDay(r.start) : `${formatDay(r.start)} – ${formatDay(r.end)}`;
 }
 
+/** Calendar weeks touching the selected month, retaining Monday–Sunday boundaries. */
+export function monthWeeks(month: string): Range[] {
+  const range = periodRange("aylik", `${month}-01`);
+  const weeks: Range[] = [];
+  let week = periodRange("haftalik", range.start);
+  while (week.start <= range.end) {
+    weeks.push(week);
+    const next = parse(week.end);
+    next.setUTCDate(next.getUTCDate() + 1);
+    week = periodRange("haftalik", toKey(next));
+  }
+  return weeks;
+}
+
+export function monthLabel(month: string): string {
+  return parse(`${month}-01`).toLocaleDateString("tr-TR", { month: "long", year: "numeric", timeZone: "UTC" });
+}
+
 /** ASCII file-name slug for Turkish names ("Ahmet Yılmaz" -> "ahmet-yilmaz"). */
 export function fileSlug(s: string) {
   const map: Record<string, string> = { ı: "i", ğ: "g", ü: "u", ş: "s", ö: "o", ç: "c" };
